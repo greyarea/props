@@ -23,13 +23,21 @@ new() ->
 %% @doc Get a property for a props structure.
 %% This is equivalent to `get(PathSpec, Props, undefined)`.
 -spec get(prop_path(), props()) -> undefined | prop_value().
-get(_Path, _Props) ->
-    undefined.
+get(Path, Props) ->
+    get(Path, Props, undefined).
 
 %% @doc Get a property in props structure by path.
 -spec get(prop_path(), props(), undefined | prop_value()) -> undefined | prop_value().
-get(_Path, _Props, Default) ->
-    Default.
+get(Path, Props, Default) when is_atom(Path) ->
+    get(atom_to_list(Path), Props, Default);
+get(Path, Props, Default) ->
+    F = props_path_parser:parse(Path),
+    case F(Props) of
+        undefined ->
+            Default;
+        Result ->
+            Result
+    end.
 
 %% @doc Set a property in a props structure by path.
 -spec set(prop_path(), prop_value(), props()) -> props().
