@@ -1,0 +1,7 @@
+%% -*- mode: erlang -*-
+
+{application, props,
+ [{description, "Property structure library"},
+  {vsn, git},
+  {id, "props"},
+  {applications, [kernel, stdlib]}]}.
