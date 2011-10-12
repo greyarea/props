@@ -22,6 +22,6 @@ build-plt:
 	@dialyzer --build_plt --apps kernel stdlib compiler
 
 test:
-	@./rebar ct skip_deps=true
+	@./rebar eunit skip_deps=true
 
 .PHONY: all depends compile clean build docs dialyze build-plt test
