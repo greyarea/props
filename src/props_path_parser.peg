@@ -1,0 +1,41 @@
+%% Property path DSL
+%%
+%% Very similar to JSON paths in JavaScript:
+%%
+%% Example:
+%%   foo.bar[2].baz
+%%
+%% Paths can be either a string or an atom so both
+%%   foo.bar
+%% and
+%%   "foo.bar"
+%% will work the same.
+%%
+%% Indexes are 1-based, just like Erlang's lists module.
+
+path <- var ('[' int ']')? ('.' path)? `
+  io:format("Node = ~w~n~n", [Node]),
+  case Node of
+      [Var, [], []] ->
+          fun({Props}) ->
+              proplists:get_value(Var, Props)
+          end;
+      [Var, [_, I, _], []] ->
+          fun({Props}) ->
+              lists:nth(I, proplists:get_value(Var, Props))
+          end;
+      [Var, [], [_, PathFun]] ->
+          fun({Props}) ->
+              PathFun(proplists:get_value(Var, Props))
+          end;
+      [Var, [_, I, _], [_, PathFun]] ->
+          fun({Props}) ->
+              PathFun(lists:nth(I, proplists:get_value(Var, Props)))
+          end
+  end`;
+
+int <- [0-9]+ `
+  list_to_integer(binary_to_list(list_to_binary(Node)))`;
+
+var <- [_a-zA-Z] [_a-zA-Z0-9]* `
+  list_to_binary(Node)`;

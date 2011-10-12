@@ -1,6 +1,8 @@
 erl_crash.dump
 *.beam
 
+src/props_path_parser.erl
+
 deps
 ebin
 .eunit
