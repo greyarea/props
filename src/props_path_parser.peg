@@ -14,7 +14,6 @@
 %% Indexes are 1-based, just like Erlang's lists module.
 
 path <- var ('[' int ']')? ('.' path)? `
-  io:format("Node = ~w~n~n", [Node]),
   case Node of
       [Var, [], []] ->
           fun({Props}) ->
