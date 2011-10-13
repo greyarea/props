@@ -5,6 +5,7 @@ src/props_path_parser.erl
 
 deps
 ebin
+logs
 .eunit
 
 
