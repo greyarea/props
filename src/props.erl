@@ -12,8 +12,13 @@
 -type prop_value() :: true | false | number() | 
                       [prop_value() | props()] | props().
 -opaque props() :: {[{binary(), prop_value()}]}.
-
 -type prop_path() :: atom() | string().
+-type path_tokens() :: [{prop | index, pos_integer() | binary()}].
+
+-define(INVALID_ACCESS_IDX(Idx, Obj),
+        {error, {invalid_access, index, Idx, Obj}}).
+-define(INVALID_ACCESS_KEY(Key, Obj),
+        {error, {inavlid_access, key, list_to_atom(binary_to_list(Key)), Obj}}).
 
 %% @doc Create a new props structure.
 -spec new() -> props().
@@ -31,53 +36,111 @@ get(Path, Props) ->
 get(Path, Props, Default) when is_atom(Path) ->
     get(atom_to_list(Path), Props, Default);
 get(Path, Props, Default) ->
-    F = props_path_parser:parse(Path),
-    case F(Props) of
-        undefined ->
+    PathTokens = props_path_parser:parse(Path),
+    do_get(PathTokens, Props, Default).
+
+%% @doc Internal getter which operates on path tokens.
+-spec do_get(path_tokens(), prop_value(), undefined | prop_value()) -> undefined | prop_value().
+do_get([], Value, _Default) ->
+    Value;
+do_get([{prop, Key} | Rest], {PropList}, Default) ->
+    case proplists:get_value(Key, PropList, Default) of
+        Default ->
             Default;
-        Result ->
-            Result
-    end.
+        Other ->
+            do_get(Rest, Other, Default)
+    end;
+do_get([{prop, Key} | _Rest], NonProps, _Default) ->
+    throw(?INVALID_ACCESS_KEY(Key, NonProps));
+do_get([{index, Idx} | Rest], List, Default) when is_list(List) ->
+    Val = try
+              lists:nth(Idx, List)
+          catch
+              _:_ ->
+                  Default
+          end,
+    case Val of
+        Default ->
+            Default;
+        _ ->
+            do_get(Rest, Val, Default)
+    end;
+do_get([{index, Idx} | _Rest], NonList, _Default) ->
+    throw(?INVALID_ACCESS_IDX(Idx, NonList)).
 
 %% @doc Set a property in a props structure by path.
 -spec set(prop_path(), prop_value(), props()) -> props().
+set(Path, Value, Props) when is_atom(Path) ->
+    set(atom_to_list(Path), Value, Props);
 set(Path, Value, Props) ->
-    PathList = path_to_list(Path),
-    do_set(PathList, Value, Props).
+    PathTokens = props_path_parser:parse(Path),
+    do_set(PathTokens, Value, Props).
 
 %% @doc Internal naive recursive setter.
--spec do_set([string()], prop_value(), props()) -> props().
-do_set([Final], Value, {PropList}) ->
-    Key = list_to_binary(Final),
+-spec do_set(path_tokens(), prop_value(), props()) -> props().
+do_set([{prop, Key}], Value, {PropList}) ->
     PropList2 = lists:keystore(Key, 1, PropList, {Key, Value}),
     {PropList2};
-do_set([First | Rest] = PathList, Value, {PropList} = Props) ->
-    Key = list_to_binary(First),
-    
-    case props:get(First, Props) of
-        {_} = P ->
-            PropList2 = lists:keystore(Key, 1, PropList,
-                                       {Key, do_set(Rest, Value, P)}),
-            {PropList2};
-        _ ->
-            throw({error, {invalid_path, list_to_path(PathList), Props}})
-    end.
-
+do_set([{prop, Key}], _Value, NonProps) ->
+    throw(?INVALID_ACCESS_KEY(Key, NonProps));
+do_set([{index, Idx}], Value, List) when is_list(List) ->
+    try
+        {Prefix, Suffix} = case {Idx, List} of
+                               {1, []} ->
+                                   {[], []};
+                               {1, [_ | Suf]} ->
+                                   {[], Suf};
+                               _ ->
+                                   lists:split(Idx - 1, List)
+                           end,
+        case Suffix of
+            [] ->
+                lists:append(Prefix, [Value]);
+            [_ | Rest] ->
+                lists:append(Prefix, [Value], Rest)
+        end
+    catch
+        _:_ ->
+            throw(?INVALID_ACCESS_IDX(Idx, List))
+    end;
+do_set([{index, Idx}], _Value, NonList) ->
+    throw(?INVALID_ACCESS_IDX(Idx, NonList));
+do_set([{prop, Key} | Rest], Value, {PropList}) ->
+    Val = case proplists:get_value(Key, PropList) of
+              undefined ->
+                  case Rest of
+                      [{prop, _} | _] ->
+                          do_set(Rest, Value, {[]});
+                      [{index, _} | _] ->
+                          do_set(Rest, Value, [])
+                  end;
+              Other ->
+                  do_set(Rest, Value, Other)
+          end,
+    PropList2 = lists:keystore(Key, 1, PropList, {Key, Val}),
+    {PropList2};
+do_set([{prop, Key} | _Rest], _Value, NonProps) ->
+    throw(?INVALID_ACCESS_KEY(Key, NonProps));
+do_set([{index, Idx} | Rest], Value, List) when is_list(List) ->
+    {Prefix, Suffix} = try
+                           lists:split(Idx - 1, List)
+                       catch
+                           _:_ ->
+                               throw(?INVALID_ACCESS_IDX(Idx, List))
+                       end,
+    case {Suffix, Rest} of
+        {[], [{prop, _} | _]} ->
+            lists:append(Prefix, [{[]}]);
+        {[], [{index, _} | _]} ->
+            lists:append(Prefix, [[]]);
+        {[OldVal | End], _} ->
+            Val = do_set(Rest, Value, OldVal),
+            lists:append(Prefix, [Val], End)
+    end;
+do_set([{index, Idx} | _Rest], _Value, NonList) ->
+    throw(?INVALID_ACCESS_IDX(Idx, NonList)).
+                        
 %% @doc Return a list of differences between two property structures.
 -spec diff(props(), props()) -> [{prop_path(), {prop_value(), prop_value()}}].
 diff(_Props1, _Props2) ->
     [].
-
-%% internal functions
-
-%% @doc Convert a path into a list of path parts.
--spec path_to_list(prop_path()) -> [string()].
-path_to_list(Path) when is_atom(Path) ->
-    path_to_list(atom_to_list(Path));
-path_to_list(Path) ->
-    string:tokens(Path, ".").
-
-%% @doc Convert a list of path parts into a path.
--spec list_to_path([string()]) -> prop_path().
-list_to_path(PathList) ->
-    string:join(PathList, ".").

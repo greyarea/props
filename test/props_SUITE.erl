@@ -8,7 +8,10 @@
          array_get_with_string_path/1,
          simple_get/1,
          simple_set/1,
-         multi_set/1]).
+         multi_set/1,
+         array_index_change/1,
+         create_implicit_props/1,
+         create_implicit_array/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
@@ -23,7 +26,10 @@ all() ->
      array_get_with_string_path,
      simple_get,
      simple_set,
-     multi_set].
+     multi_set,
+     array_index_change,
+     create_implicit_props,
+     create_implicit_array].
 
 %% Basic get tests.
 
@@ -51,3 +57,18 @@ multi_set(_Config) ->
     Dst = {[{<<"a">>, {[{<<"b">>, {[{<<"c">>, 1}]}}]}},
             {<<"b">>, 2}]},
     Dst = props:set(a.b.c, 1, Src).
+
+array_index_change(_Config) ->
+    Src = {[{<<"a">>, [1]}]},
+    Dst = {[{<<"a">>, [2]}]},
+    Dst = props:set("a[1]", 2, Src).
+
+create_implicit_props(_Config) ->
+    Src = {[]},
+    Dst = {[{<<"a">>, {[{<<"b">>, 1}]}}]},
+    Dst = props:set(a.b, 1, Src).
+
+create_implicit_array(_Config) ->
+    Src = {[]},
+    Dst = {[{<<"a">>, [1]}]},
+    Dst = props:set("a[1]", 1, Src).

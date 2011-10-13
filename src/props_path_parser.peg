@@ -16,21 +16,13 @@
 path <- var ('[' int ']')? ('.' path)? `
   case Node of
       [Var, [], []] ->
-          fun({Props}) ->
-              proplists:get_value(Var, Props)
-          end;
+          [{prop, Var}];
       [Var, [_, I, _], []] ->
-          fun({Props}) ->
-              lists:nth(I, proplists:get_value(Var, Props))
-          end;
-      [Var, [], [_, PathFun]] ->
-          fun({Props}) ->
-              PathFun(proplists:get_value(Var, Props))
-          end;
-      [Var, [_, I, _], [_, PathFun]] ->
-          fun({Props}) ->
-              PathFun(lists:nth(I, proplists:get_value(Var, Props)))
-          end
+          [{prop, Var}, {index, I}];
+      [Var, [], [_, Rest]] ->
+          [{prop, Var}] ++ Rest;
+      [Var, [_, I, _], [_, Rest]] ->
+          [{prop, Var}, {index, I}] ++ Rest
   end`;
 
 int <- [0-9]+ `
