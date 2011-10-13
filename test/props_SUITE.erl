@@ -6,7 +6,9 @@
          array_get_with_atom_path/1,
          basic_get_with_string_path/1,
          array_get_with_string_path/1,
-         simple_get/1]).
+         simple_get/1,
+         simple_set/1,
+         multi_set/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
@@ -19,7 +21,9 @@ all() ->
      array_get_with_atom_path,
      basic_get_with_string_path,
      array_get_with_string_path,
-     simple_get].
+     simple_get,
+     simple_set,
+     multi_set].
 
 %% Basic get tests.
 
@@ -37,3 +41,13 @@ array_get_with_string_path(_Config) ->
 
 simple_get(_Config) ->
     1 = props:get(a, ?DATA).
+
+simple_set(_Config) ->
+    {[{<<"a">>, 1}]} = props:set(a, 1, props:new()).
+
+multi_set(_Config) ->
+    Src = {[{<<"a">>, {[{<<"b">>, {[]}}]}},
+            {<<"b">>, 2}]},
+    Dst = {[{<<"a">>, {[{<<"b">>, {[{<<"c">>, 1}]}}]}},
+            {<<"b">>, 2}]},
+    Dst = props:set(a.b.c, 1, Src).

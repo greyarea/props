@@ -41,10 +41,43 @@ get(Path, Props, Default) ->
 
 %% @doc Set a property in a props structure by path.
 -spec set(prop_path(), prop_value(), props()) -> props().
-set(_Path, _Value, Props) ->
-    Props.
+set(Path, Value, Props) ->
+    PathList = path_to_list(Path),
+    do_set(PathList, Value, Props).
+
+%% @doc Internal naive recursive setter.
+-spec do_set([string()], prop_value(), props()) -> props().
+do_set([Final], Value, {PropList}) ->
+    Key = list_to_binary(Final),
+    PropList2 = lists:keystore(Key, 1, PropList, {Key, Value}),
+    {PropList2};
+do_set([First | Rest] = PathList, Value, {PropList} = Props) ->
+    Key = list_to_binary(First),
+    
+    case props:get(First, Props) of
+        {_} = P ->
+            PropList2 = lists:keystore(Key, 1, PropList,
+                                       {Key, do_set(Rest, Value, P)}),
+            {PropList2};
+        _ ->
+            throw({error, {invalid_path, list_to_path(PathList), Props}})
+    end.
 
 %% @doc Return a list of differences between two property structures.
 -spec diff(props(), props()) -> [{prop_path(), {prop_value(), prop_value()}}].
 diff(_Props1, _Props2) ->
     [].
+
+%% internal functions
+
+%% @doc Convert a path into a list of path parts.
+-spec path_to_list(prop_path()) -> [string()].
+path_to_list(Path) when is_atom(Path) ->
+    path_to_list(atom_to_list(Path));
+path_to_list(Path) ->
+    string:tokens(Path, ".").
+
+%% @doc Convert a list of path parts into a path.
+-spec list_to_path([string()]) -> prop_path().
+list_to_path(PathList) ->
+    string:join(PathList, ".").
