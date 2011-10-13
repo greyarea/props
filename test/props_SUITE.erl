@@ -11,13 +11,37 @@
          multi_set/1,
          array_index_change/1,
          create_implicit_props/1,
-         create_implicit_array/1]).
+         create_implicit_array/1,
+         create_implicit_index/1,
+         throw_on_get_non_props/1,
+         throw_on_get_non_array/1,
+         throw_on_set_non_props/1,
+         throw_on_set_non_array/1,
+         throw_on_set_array_oob/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
 -define(DATA, {[{<<"a">>, 1},
                 {<<"b">>, [2, {[{<<"c">>, 3}]}]},
                 {<<"d">>, {[{<<"e">>, {[{<<"f">>, 4}]}}]}}]}).
+
+-define(assertThrows(Exc, Expr),
+        begin
+            try
+                Expr,
+                throw(no_throw)
+            catch
+                throw:no_throw ->
+                    ct:fail(no_throw);
+                throw:Exception___ ->
+                    case Exception___ of
+                        Exc -> ok;
+                        _ -> ct:fail({wrong_throw, throw, Exception___})
+                    end;
+                Class___:Exception___ ->
+                    ct:fail({wrong_throw, Class___, Exception___})
+            end
+        end).
 
 all() ->
     [basic_get_with_atom_path,
@@ -29,7 +53,13 @@ all() ->
      multi_set,
      array_index_change,
      create_implicit_props,
-     create_implicit_array].
+     create_implicit_array,
+     create_implicit_index,
+     throw_on_get_non_props,
+     throw_on_get_non_array,
+     throw_on_set_non_props,
+     throw_on_set_non_array,
+     throw_on_set_array_oob].
 
 %% Basic get tests.
 
@@ -72,3 +102,28 @@ create_implicit_array(_Config) ->
     Src = {[]},
     Dst = {[{<<"a">>, [1]}]},
     Dst = props:set("a[1]", 1, Src).
+
+create_implicit_index(_Config) ->
+    Src = {[{<<"a">>, [1,2,3]}]},
+    Dst = {[{<<"a">>, [1,2,3,4]}]},
+    Dst = props:set("a[4]", 4, Src).
+
+throw_on_get_non_props(_Config) ->
+    ?assertThrows({error, {invalid_access, key, _, _}},
+                  props:get(a.b, ?DATA)).
+
+throw_on_get_non_array(_Config) ->
+    ?assertThrows({error, {invalid_access, index, _, _}},
+                  props:get("d[1]", ?DATA)).
+
+throw_on_set_non_props(_Config) ->
+    ?assertThrows({error, {invalid_access, key, _, _}},
+                  props:set(a.b, 1, ?DATA)).
+
+throw_on_set_non_array(_Config) ->
+    ?assertThrows({error, {invalid_access, index, _, _}},
+                  props:set("a[1]", 1, ?DATA)).
+    
+throw_on_set_array_oob(_Config) ->
+    ?assertThrows({error, {invalid_access, index, _, _}},
+                  props:set("a[5]", 1, {[{<<"a">>, [1,2,3]}]})).

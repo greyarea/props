@@ -18,7 +18,7 @@
 -define(INVALID_ACCESS_IDX(Idx, Obj),
         {error, {invalid_access, index, Idx, Obj}}).
 -define(INVALID_ACCESS_KEY(Key, Obj),
-        {error, {inavlid_access, key, list_to_atom(binary_to_list(Key)), Obj}}).
+        {error, {invalid_access, key, list_to_atom(binary_to_list(Key)), Obj}}).
 
 %% @doc Create a new props structure.
 -spec new() -> props().
