@@ -5,6 +5,7 @@
          get/2,
          get/3,
          set/3,
+         make/1,
          diff/2]).
 
 -export_type([prop_value/0, props/0, prop_path/0]).
@@ -140,6 +141,21 @@ do_set([{index, Idx} | Rest], Value, List) when is_list(List) ->
 do_set([{index, Idx} | _Rest], _Value, NonList) ->
     throw(?INVALID_ACCESS_IDX(Idx, NonList)).
                         
+%% @doc Make a property structure from a proplist.
+-spec make(proplists:proplist()) -> props().
+make(PropList) ->
+    PropList2 = lists:map(
+                  fun(Atom) when is_atom(Atom) ->
+                          {atom_to_binary(Atom, utf8), true};
+                     ({Key, Val}) when is_atom(Key) ->
+                          {atom_to_binary(Key, utf8), Val};
+                     ({Key, Val}) when is_list(Key) ->
+                          {list_to_binary(Key), Val};
+                     ({Key, Val}) when is_binary(Key) ->
+                          {Key, Val}
+                  end, PropList),
+    {PropList2}.
+
 %% @doc Return a list of differences between two property structures.
 -spec diff(props(), props()) -> [{prop_path(), {prop_value(), prop_value()}}].
 diff(_Props1, _Props2) ->
