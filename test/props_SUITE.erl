@@ -17,7 +17,10 @@
          throw_on_get_non_array/1,
          throw_on_set_non_props/1,
          throw_on_set_non_array/1,
-         throw_on_set_array_oob/1]).
+         throw_on_set_array_oob/1,
+         take_keys/1,
+         drop_keys/1,
+         merge/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
@@ -59,7 +62,10 @@ all() ->
      throw_on_get_non_array,
      throw_on_set_non_props,
      throw_on_set_non_array,
-     throw_on_set_array_oob].
+     throw_on_set_array_oob,
+     take_keys,
+     drop_keys,
+     merge].
 
 %% Basic get tests.
 
@@ -127,3 +133,14 @@ throw_on_set_non_array(_Config) ->
 throw_on_set_array_oob(_Config) ->
     ?assertThrows({error, {invalid_access, index, _, _}},
                   props:set("a[5]", 1, {[{<<"a">>, [1,2,3]}]})).
+
+take_keys(_Config) ->
+    {[{<<"a">>, 1}]} = props:take([a], ?DATA).
+
+drop_keys(_Config) ->
+    {[{<<"a">>, 1}]} = props:drop([b, d], ?DATA).
+
+merge(_Config) ->
+    Src = props:make([{a, 1}, {b, 1}]),
+    Dst = props:make([{a, 1}, {b, 2}, {c, 3}]),
+    Dst = props:merge(Src, props:make([{b, 2}, {c, 3}])).

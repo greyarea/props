@@ -6,6 +6,9 @@
          get/3,
          set/3,
          make/1,
+         take/2,
+         drop/2,
+         merge/2,
          diff/2]).
 
 -export_type([prop_value/0, props/0, prop_path/0]).
@@ -155,6 +158,46 @@ make(PropList) ->
                           {Key, Val}
                   end, PropList),
     {PropList2}.
+
+%% @doc Convert a mixed atom/binary key list to binary only.
+-spec keys_to_binary([atom() | binary()]) -> [binary()].
+keys_to_binary(Keys) ->
+    lists:map(
+      fun(K) ->
+              if
+                  is_atom(K) ->
+                      atom_to_binary(K, utf8);
+                  true ->
+                      K
+              end
+      end, Keys).
+
+%% @doc Return a new property structure containing specific keys only.
+-spec take([atom() | binary()], props()) -> props().
+take(Keys, {PropList}) ->
+    BinKeys = keys_to_binary(Keys),
+    {lists:filter(
+       fun({Key, _Val}) ->
+               lists:member(Key, BinKeys)
+       end, PropList)}.
+
+%% @doc Return a new property structure without the given keys.
+-spec drop([atom() | binary()], props()) -> props().
+drop(Keys, {PropList}) ->
+    BinKeys = keys_to_binary(Keys),
+    {lists:filter(
+       fun({Key, _Val}) ->
+               not lists:member(Key, BinKeys)
+       end, PropList)}.
+
+%% @doc Merge two property structures.
+%% Duplicate keys in the second structure overwrite those in the first.
+-spec merge(props(), props()) -> props().
+merge(Props, {[]}) ->
+    Props;
+merge({PropList1}, {[{Key, _Val} = Prop | PropList2]}) ->
+    NewPropList = lists:keystore(Key, 1, PropList1, Prop),
+    merge({NewPropList}, {PropList2}).
 
 %% @doc Return a list of differences between two property structures.
 -spec diff(props(), props()) -> [{prop_path(), {prop_value(), prop_value()}}].
