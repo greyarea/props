@@ -9,7 +9,8 @@
          take/2,
          drop/2,
          merge/2,
-         diff/2]).
+         diff/2,
+         to_string/1]).
 
 -export_type([prop_value/0, props/0, prop_path/0]).
 
@@ -203,3 +204,32 @@ merge({PropList1}, {[{Key, _Val} = Prop | PropList2]}) ->
 -spec diff(props(), props()) -> [{prop_path(), {prop_value(), prop_value()}}].
 diff(_Props1, _Props2) ->
     [].
+
+%% @doc Returns a pretty printed string of the message.
+-spec to_string(props:props()) -> string().
+to_string(Props) ->
+    do_to_string(Props, 0).
+
+%% @doc Converts message term to a string.
+-spec term_to_string(prop_value(), pos_integer()) -> string().
+term_to_string([{_, _}|_] = Props, Depth) ->
+    do_to_string(Props, Depth + 1);
+term_to_string(Term, _) when is_binary(Term) ->
+    io_lib:format("\"~ts\"", [Term]);
+term_to_string(Term, _) ->
+    io_lib:format("~p", [Term]).
+
+%% @doc Converts message properties to a string.
+-spec do_to_string(props(), pos_integer()) -> string().
+do_to_string({[]}, _) ->
+    "{}";
+do_to_string({PropList}, Depth) ->
+    Indent = string:chars($ , Depth * 4),
+    F = fun ({Key, Value}, Acc) ->
+		KeyStr = io_lib:format("~ts", [Key]),
+		ValueStr = term_to_string(Value, Depth),
+		KeyIndent = string:chars($ , (Depth + 1) * 4),
+		[$\n, $,, ValueStr, $ , $:, KeyIndent ++ KeyStr | Acc]
+	end,
+    [$\n, $, | Acc1] = lists:foldl(F, "\n{", PropList),
+    lists:flatten(lists:reverse([Indent ++ "}", $\n | Acc1])).
