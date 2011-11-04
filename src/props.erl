@@ -212,7 +212,7 @@ to_string(Props) ->
 
 %% @doc Converts message term to a string.
 -spec term_to_string(prop_value(), pos_integer()) -> string().
-term_to_string([{_, _}|_] = Props, Depth) ->
+term_to_string({[{_, _}|_]} = Props, Depth) ->
     do_to_string(Props, Depth + 1);
 term_to_string(Term, _) when is_binary(Term) ->
     io_lib:format("\"~ts\"", [Term]);
