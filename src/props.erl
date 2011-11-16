@@ -10,6 +10,8 @@
          drop/2,
          merge/2,
          diff/2,
+         keys/1,
+         fold/3,
          to_string/1]).
 
 -export_type([prop_value/0, props/0, prop_path/0]).
@@ -204,6 +206,19 @@ merge({PropList1}, {[{Key, _Val} = Prop | PropList2]}) ->
 -spec diff(props(), props()) -> [{prop_path(), {prop_value(), prop_value()}}].
 diff(_Props1, _Props2) ->
     [].
+
+%% @doc Return the immediate keys in a property structure.
+-spec keys(props()) -> [binary()].
+keys({PropList}) ->
+    proplists:get_keys(PropList).
+
+%% @doc Fold over the immediate keys/vals in a proplist.
+-spec fold(fun((binary(), prop_value(), term()) -> term()), term(), props()) -> term().
+fold(F, Init, {PropList}) ->
+    lists:foldl(
+      fun({Key, Val}, Acc) ->
+              F(Key, Val, Acc)
+      end, Init, PropList).
 
 %% @doc Returns a pretty printed string of the message.
 -spec to_string(props:props()) -> string().
