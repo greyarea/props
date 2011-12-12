@@ -12,6 +12,7 @@
          diff/2,
          keys/1,
          fold/3,
+         to_pretty/1,
          to_string/1]).
 
 -export_type([prop_value/0, props/0, prop_path/0]).
@@ -221,30 +222,79 @@ fold(F, Init, {PropList}) ->
       end, Init, PropList).
 
 %% @doc Returns a pretty printed string of the message.
--spec to_string(props:props()) -> string().
-to_string(Props) ->
-    do_to_string(Props, 0).
+-spec to_pretty(props:props()) -> string().
+to_pretty(Props) ->
+    do_to_pretty(Props, 0).
 
 %% @doc Converts message term to a string.
--spec term_to_string(prop_value(), pos_integer()) -> string().
-term_to_string({[{_, _}|_]} = Props, Depth) ->
-    do_to_string(Props, Depth + 1);
-term_to_string(Term, _) when is_binary(Term) ->
+-spec term_to_pretty(prop_value(), pos_integer()) -> string().
+term_to_pretty({_} = Props, Depth) ->
+    do_to_pretty(Props, Depth + 1);
+term_to_pretty(Term, _) when is_binary(Term) ->
     io_lib:format("\"~ts\"", [Term]);
-term_to_string(Term, _) ->
+term_to_pretty([_|_] = List, Depth) ->
+    do_to_pretty(List, Depth + 1);
+term_to_pretty(Term, _) ->
     io_lib:format("~p", [Term]).
 
+
 %% @doc Converts message properties to a string.
--spec do_to_string(props(), pos_integer()) -> string().
-do_to_string({[]}, _) ->
+-spec do_to_pretty(props(), pos_integer()) -> string().
+do_to_pretty({[]}, _) ->
     "{}";
-do_to_string({PropList}, Depth) ->
+do_to_pretty({PropList}, Depth) ->
     Indent = string:chars($ , Depth * 4),
     F = fun ({Key, Value}, Acc) ->
 		KeyStr = io_lib:format("~ts", [Key]),
-		ValueStr = term_to_string(Value, Depth),
+		ValueStr = term_to_pretty(Value, Depth),
 		KeyIndent = string:chars($ , (Depth + 1) * 4),
 		[$\n, $,, ValueStr, $ , $:, KeyIndent ++ KeyStr | Acc]
 	end,
     [$\n, $, | Acc1] = lists:foldl(F, "\n{", PropList),
-    lists:flatten(lists:reverse([Indent ++ "}", $\n | Acc1])).
+    lists:flatten(lists:reverse([Indent ++ "}", $\n | Acc1]));
+do_to_pretty([], _) ->
+    "[]";
+do_to_pretty([_|_] = List, Depth) ->
+    Indent = string:chars($ , Depth * 4),
+    F = fun(Value, Acc) ->
+                ValueStr = term_to_pretty(Value, Depth),
+                ValueIndent = string:chars($ , (Depth + 1) * 4),
+                [$\n, $,, ValueStr, ValueIndent | Acc]
+        end,
+    [$\n, $, | Acc1] = lists:foldl(F, "\n[", List),
+    lists:flatten(lists:reverse([Indent ++ "]", $\n | Acc1])).
+
+%% @doc Returns a printed string of the property structure, similar to JSON.
+-spec to_string(props:props()) -> string().
+to_string({[]}) ->
+    "{}";
+to_string([]) ->
+    "[]";
+to_string({PropList}) ->
+    S = lists:foldl(
+          fun({Key, Val}, Acc) ->
+                  KeyStr = io_lib:format("~ts", [Key]),
+                  ValStr = term_to_string(Val),
+                  [$ , $,, ValStr, $ , $:, KeyStr | Acc]
+          end, "{", PropList),
+    [$ , $, | S2] = S,
+    lists:flatten(lists:reverse([$} | S2]));
+to_string(List) when is_list(List) ->
+    S = lists:foldl(
+          fun(Val, Acc) ->
+                  ValStr = term_to_string(Val),
+                  [$ , $,, ValStr | Acc]
+          end, "[", List),
+    [$ , $, | S2] = S,
+    lists:flatten(lists:reverse([$] | S2])).
+
+%% @doc Stringify a term.
+-spec term_to_string(prop_value()) -> string().
+term_to_string({_} = Props) ->
+    to_string(Props);
+term_to_string(List) when is_list(List) ->
+    to_string(List);
+term_to_string(Binary) when is_binary(Binary) ->
+    lists:flatten(io_lib:format("\"~ts\"", [Binary]));
+term_to_string(Term) ->
+    lists:flatten(io_lib:format("~p", [Term])).
