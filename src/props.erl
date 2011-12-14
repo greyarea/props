@@ -4,6 +4,8 @@
 -export([new/0,
          get/2,
          get/3,
+         set/1,
+         set/2,
          set/3,
          make/1,
          take/2,
@@ -75,6 +77,27 @@ do_get([{index, Idx} | Rest], List, Default) when is_list(List) ->
     end;
 do_get([{index, Idx} | _Rest], NonList, _Default) ->
     throw(?INVALID_ACCESS_IDX(Idx, NonList)).
+
+%% @doc Set properties in a new props structure.
+-spec set([{prop_path(), prop_value()}]) -> props().
+set(PropsList) ->
+    set(PropsList, props:new()).
+
+%% @doc Set one or properties in a props structure.
+%%
+%% With the (Path, Value) form it sets a single property in a blank
+%% props structure.
+%%
+%% With the (List, Props) form it sets all the properties in the given
+%% list in the given props structure.
+-spec set(prop_path() | [{prop_path(), prop_value()}], prop_value() | props()) -> props().
+set([{_, _} | _] = PropsList, Props) ->
+    lists:foldl(
+      fun({Path, Value}, Acc) ->
+              props:set(Path, Value, Acc)
+      end, Props, PropsList);
+set(Path, Value) ->
+    props:set(Path, Value, props:new()).
 
 %% @doc Set a property in a props structure by path.
 -spec set(prop_path(), prop_value(), props()) -> props().
