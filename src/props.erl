@@ -14,6 +14,7 @@
          diff/2,
          keys/1,
          fold/3,
+	 filter/3,
          to_pretty/1,
          to_string/1]).
 
@@ -243,6 +244,37 @@ fold(F, Init, {PropList}) ->
       fun({Key, Val}, Acc) ->
               F(Key, Val, Acc)
       end, Init, PropList).
+
+%% @doc Filter a list of props.
+%%
+%% Parameters include the list of props to be filtered, a props containing
+%% keys and values to be matched and a boolean value that tells whether
+%% to filter matched or not matched prop.
+-spec filter([props:props()], props:props(), boolean()) -> [props:props()].
+filter(PropsList, {MatchProps}, Match) ->
+    FilterMatch =
+	fun(Props) ->
+		lists:filter(
+		  fun({MPKey, MPValue}) ->
+			  case props:get(MPKey, Props) of
+			      Value when Match, Value =:= MPValue -> 
+				  false;
+			      Value when not Match, Value =/= MPValue ->
+				  false;
+			      _ ->
+				  true
+			  end
+		  end, MatchProps)
+	end,
+    lists:filter(
+      fun(Props) ->
+	      case FilterMatch(Props) of
+		  [] ->
+		      true;
+		  _ ->
+		      false
+	      end
+      end, PropsList).
 
 %% @doc Returns a pretty printed string of the message.
 -spec to_pretty(props:props()) -> string().

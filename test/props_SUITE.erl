@@ -20,7 +20,8 @@
          throw_on_set_array_oob/1,
          take_keys/1,
          drop_keys/1,
-         merge/1]).
+         merge/1,
+	 filter/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
@@ -65,7 +66,8 @@ all() ->
      throw_on_set_array_oob,
      take_keys,
      drop_keys,
-     merge].
+     merge,
+     filter].
 
 %% Basic get tests.
 
@@ -144,3 +146,25 @@ merge(_Config) ->
     Src = props:make([{a, 1}, {b, 1}]),
     Dst = props:make([{a, 1}, {b, 2}, {c, 3}]),
     Dst = props:merge(Src, props:make([{b, 2}, {c, 3}])).
+
+filter(_Config) ->
+    PropsList = [props:make([{a, 1}, {b, 1}]),
+		 props:make([{a, 2}, {b, 1}])],
+    
+    Filtered1 = props:filter(PropsList, props:make([{a, 1}]), true),
+    1 = length(Filtered1),
+    1 = props:get(a, hd(Filtered1)),
+    1 = props:get(b, hd(Filtered1)),
+    
+    Filtered2 = props:filter(PropsList, props:make([{b, 1}]), true),
+    2 = length(Filtered2),
+    
+    Filtered3 = props:filter(PropsList, props:make([{a, 1}]), false),
+    1 = length(Filtered3),
+    2 = props:get(a, hd(Filtered3)),
+    
+    Filtered4 = props:filter(PropsList, props:make([{b, 2}]), true),
+    0 = length(Filtered4),
+
+    Filtered5 = props:filter(PropsList, props:make([{b, 2}]), false),
+    2 = length(Filtered5).
