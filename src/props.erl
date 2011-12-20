@@ -23,7 +23,7 @@
 -type prop_value() :: true | false | number() | 
                       [prop_value() | props()] | props().
 -opaque props() :: {[{binary(), prop_value()}]}.
--type prop_path() :: atom() | string().
+-type prop_path() :: atom() | string() | binary().
 -type path_tokens() :: [{prop | index, pos_integer() | binary()}].
 
 -define(INVALID_ACCESS_IDX(Idx, Obj),
@@ -46,6 +46,8 @@ get(Path, Props) ->
 -spec get(prop_path(), props(), undefined | prop_value()) -> undefined | prop_value().
 get(Path, Props, Default) when is_atom(Path) ->
     get(atom_to_list(Path), Props, Default);
+get(Path, Props, Default) when is_binary(Path) ->
+    do_get([{prop, Path}], Props, Default);
 get(Path, Props, Default) ->
     PathTokens = props_path_parser:parse(Path),
     do_get(PathTokens, Props, Default).
@@ -104,6 +106,8 @@ set(Path, Value) ->
 -spec set(prop_path(), prop_value(), props()) -> props().
 set(Path, Value, Props) when is_atom(Path) ->
     set(atom_to_list(Path), Value, Props);
+set(Path, Value, Props) when is_binary(Path) ->
+    do_set([{prop, Path}], Value, Props);
 set(Path, Value, Props) ->
     PathTokens = props_path_parser:parse(Path),
     do_set(PathTokens, Value, Props).
