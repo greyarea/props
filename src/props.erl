@@ -14,7 +14,8 @@
          diff/2,
          keys/1,
          fold/3,
-	 filter/3,
+	 select_matches/2,
+	 delete_matches/2,
          to_pretty/1,
          to_string/1]).
 
@@ -249,36 +250,15 @@ fold(F, Init, {PropList}) ->
               F(Key, Val, Acc)
       end, Init, PropList).
 
-%% @doc Filter a list of props.
-%%
-%% Parameters include the list of props to be filtered, a props containing
-%% keys and values to be matched and a boolean value that tells whether
-%% to filter matched or not matched prop.
--spec filter([props:props()], props:props(), boolean()) -> [props:props()].
-filter(PropsList, {MatchProps}, Match) ->
-    FilterMatch =
-	fun(Props) ->
-		lists:filter(
-		  fun({MPKey, MPValue}) ->
-			  case props:get(MPKey, Props) of
-			      Value when Match, Value =:= MPValue -> 
-				  false;
-			      Value when not Match, Value =/= MPValue ->
-				  false;
-			      _ ->
-				  true
-			  end
-		  end, MatchProps)
-	end,
-    lists:filter(
-      fun(Props) ->
-	      case FilterMatch(Props) of
-		  [] ->
-		      true;
-		  _ ->
-		      false
-	      end
-      end, PropsList).
+%% @doc Select props from a list that match certain props.
+-spec select_matches([props()], props()) -> [props:props()].
+select_matches(PropsList, Props) ->
+    select_or_delete_matches(PropsList, Props, select).
+
+%% @doc Delete props from a list that match certain props.
+-spec delete_matches([props()], props()) -> [props:props()].
+delete_matches(PropsList, Props) ->
+    select_or_delete_matches(PropsList, Props, delete).
 
 %% @doc Returns a pretty printed string of the message.
 -spec to_pretty(props:props()) -> string().
@@ -357,3 +337,34 @@ term_to_string(Binary) when is_binary(Binary) ->
     lists:flatten(io_lib:format("\"~ts\"", [Binary]));
 term_to_string(Term) ->
     lists:flatten(io_lib:format("~p", [Term])).
+
+%% Internal functions
+
+%% @doc Select or delete props from a list of props.
+-spec select_or_delete_matches([props()], props(), select | delete) -> [props()].
+select_or_delete_matches(PropsList, {MatchProps}, SelectOrDelete) ->
+    FilterMatch =
+	fun(Props) ->
+		lists:takewhile(
+		  fun({MPKey, MPValue}) ->
+			  case props:get(MPKey, Props) of
+			      Value when SelectOrDelete =:= select,
+					 Value =:= MPValue -> 
+				  true;
+			      Value when SelectOrDelete =:= delete,
+					 Value =/= MPValue ->
+				  true;
+			      _ ->
+				  false
+			  end
+		  end, MatchProps)
+	end,
+    lists:filter(
+      fun(Props) ->
+	      case FilterMatch(Props) of
+		  Matched when Matched =:= MatchProps->
+		      true;
+		  _ ->
+		      false
+	      end
+      end, PropsList).

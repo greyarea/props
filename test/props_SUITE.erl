@@ -21,7 +21,8 @@
          take_keys/1,
          drop_keys/1,
          merge/1,
-	 filter/1]).
+	 select_matches/1,
+	 delete_matches/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
@@ -67,7 +68,8 @@ all() ->
      take_keys,
      drop_keys,
      merge,
-     filter].
+     select_matches,
+     delete_matches].
 
 %% Basic get tests.
 
@@ -147,24 +149,32 @@ merge(_Config) ->
     Dst = props:make([{a, 1}, {b, 2}, {c, 3}]),
     Dst = props:merge(Src, props:make([{b, 2}, {c, 3}])).
 
-filter(_Config) ->
+select_matches(_Config) ->
     PropsList = [props:make([{a, 1}, {b, 1}]),
 		 props:make([{a, 2}, {b, 1}])],
     
-    Filtered1 = props:filter(PropsList, props:make([{a, 1}]), true),
-    1 = length(Filtered1),
-    1 = props:get(a, hd(Filtered1)),
-    1 = props:get(b, hd(Filtered1)),
+    Matches1 = props:select_matches(PropsList, props:make([{a, 1}])),
+    1 = length(Matches1),
+    1 = props:get(a, hd(Matches1)),
+    1 = props:get(b, hd(Matches1)),
     
-    Filtered2 = props:filter(PropsList, props:make([{b, 1}]), true),
-    2 = length(Filtered2),
+    Matches2 = props:select_matches(PropsList, props:make([{b, 1}])),
+    2 = length(Matches2),
     
-    Filtered3 = props:filter(PropsList, props:make([{a, 1}]), false),
-    1 = length(Filtered3),
-    2 = props:get(a, hd(Filtered3)),
-    
-    Filtered4 = props:filter(PropsList, props:make([{b, 2}]), true),
-    0 = length(Filtered4),
+    Matches3 = props:select_matches(PropsList, props:make([{b, 2}])),
+    0 = length(Matches3).
 
-    Filtered5 = props:filter(PropsList, props:make([{b, 2}]), false),
-    2 = length(Filtered5).
+delete_matches(_Config) ->
+    PropsList = [props:make([{a, 1}, {b, 1}]),
+		 props:make([{a, 2}, {b, 1}])],
+    
+    Rest1 = props:delete_matches(PropsList, props:make([{a, 1}])),
+    1 = length(Rest1),
+    2 = props:get(a, hd(Rest1)),
+    1 = props:get(b, hd(Rest1)),
+    
+    Rest2 = props:delete_matches(PropsList, props:make([{b, 1}])),
+    0 = length(Rest2),
+    
+    Rest3 = props:delete_matches(PropsList, props:make([{b, 2}])),
+    2 = length(Rest3).
