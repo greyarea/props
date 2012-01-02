@@ -14,10 +14,12 @@
          diff/2,
          keys/1,
          fold/3,
-	 select_matches/2,
-	 delete_matches/2,
+         select_matches/2,
+	     delete_matches/2,
          to_pretty/1,
-         to_string/1]).
+         to_string/1,
+         to_proplist/1
+         ]).
 
 -export_type([prop_value/0, props/0, prop_path/0]).
 
@@ -337,6 +339,16 @@ term_to_string(Binary) when is_binary(Binary) ->
     lists:flatten(io_lib:format("\"~ts\"", [Binary]));
 term_to_string(Term) ->
     lists:flatten(io_lib:format("~p", [Term])).
+
+
+%% @doc Returns a proplist representation
+-spec to_proplist(props:props()) -> proplists:proplist().
+to_proplist({PropList}) when is_list(PropList) ->
+    to_proplist(PropList);
+to_proplist(PropList) when is_list(PropList) ->
+    [{K, to_proplist(V)} || {K, V} <- PropList];
+to_proplist(Value) ->
+    Value.
 
 %% Internal functions
 
