@@ -343,12 +343,15 @@ term_to_string(Term) ->
 
 %% @doc Returns a proplist representation
 -spec to_proplist(props:props()) -> proplists:proplist().
-to_proplist({PropList}) when is_list(PropList) ->
+to_proplist({PropList}) ->
     to_proplist(PropList);
+to_proplist({K, V}) ->
+    {K, to_proplist(V)};
 to_proplist(PropList) when is_list(PropList) -> 
-    [{K, to_proplist(V)} || {K, V} <- PropList] ++ [ to_proplist(Props) || {Props} <- PropList];
+    [to_proplist(Prop) || Prop <- PropList];
 to_proplist(Value) ->
     Value.
+
 
 %% Internal functions
 
