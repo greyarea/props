@@ -22,7 +22,8 @@
          drop_keys/1,
          merge/1,
 	 select_matches/1,
-	 delete_matches/1]).
+	 delete_matches/1, 
+     convert_mochijson2_to_props/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
@@ -69,7 +70,8 @@ all() ->
      drop_keys,
      merge,
      select_matches,
-     delete_matches].
+     delete_matches, 
+     convert_mochijson2_to_props].
 
 %% Basic get tests.
 
@@ -178,3 +180,21 @@ delete_matches(_Config) ->
     
     Rest3 = props:delete_matches(PropsList, props:make([{b, 2}])),
     2 = length(Rest3).
+
+convert_mochijson2_to_props(_Config) ->
+
+    MochiStruct = {struct,[{<<"data">>,
+                [{struct,[{<<"name">>,<<"Peter Robinett">>},
+                            {<<"id">>,<<"37004195">>},
+                            {<<"picture">>,<<"http://profile.ak.fbcdn.net/hpro">>}]},
+                    {struct,[{<<"name">>,<<"Ville Vesterinen">>},
+                            {<<"id">>,<<"37004346">>},
+                            {<<"picture">>,<<"http://profile.ak.fbcdn.net/">>}]} 
+                ]}]}, 
+
+    Props = props:from_mochijson2(MochiStruct),
+    [H|_T] = props:get(<<"data">>, Props), 
+    <<"37004195">> = props:get(<<"id">>, H),
+    ok.
+
+
