@@ -179,7 +179,49 @@ do_set([{index, Idx} | Rest], Value, List) when is_list(List) ->
     end;
 do_set([{index, Idx} | _Rest], _Value, NonList) ->
     throw(?INVALID_ACCESS_IDX(Idx, NonList)).
-                        
+
+
+%% @doc Internal naive recursive dropper.
+-spec do_drop(atom() | binary(), props()) -> props().
+
+do_drop(Path, Props) when is_atom(Path) ->
+    do_drop(atom_to_list(Path), Props);
+do_drop(Path, Props) when is_binary(Path) ->
+    do_drop_path([{prop, Path}], Props);
+do_drop(Path, Props) ->    
+    PathTokens = props_path_parser:parse(Path),
+    do_drop_path(PathTokens, Props).
+do_drop_path([{prop, Key}], {PropList}) ->
+    PropList2 = lists:keydelete(Key, 1, PropList),
+    {PropList2};
+do_drop_path([{prop, Key}], NonProps) ->
+    throw(?INVALID_ACCESS_KEY(Key, NonProps));
+do_drop_path([{index, Idx}], List) when is_list(List) ->
+    try
+        Seq = lists:seq(1,length(List)),
+        Del = lists:keydelete(Idx, 1, lists:zip(Seq, List)),
+        {_, Vals} = lists:unzip(Del),
+        Vals
+    catch
+        _:_ ->
+            throw(?INVALID_ACCESS_IDX(Idx, List))
+    end;
+do_drop_path([{index, Idx}], NonList) ->
+    throw(?INVALID_ACCESS_IDX(Idx, NonList));
+do_drop_path([{prop, Key} | Rest], {PropList}) ->    
+    Val = case proplists:get_value(Key, PropList) of
+              undefined ->
+                  {PropList};
+              Other ->
+                  do_drop_path(Rest, Other)
+          end,
+    PropList2 = lists:keystore(Key, 1, PropList, {Key, Val}),
+    {PropList2};
+do_drop_path([{prop, Key} | _Rest], NonProps) ->
+    throw(?INVALID_ACCESS_KEY(Key, NonProps));
+do_drop_path([{index, Idx} | _Rest], NonList) ->
+    throw(?INVALID_ACCESS_IDX(Idx, NonList)).
+
 %% @doc Make a property structure from a proplist.
 -spec make(proplists:proplist()) -> props().
 make(PropList) ->
@@ -219,13 +261,11 @@ take(Keys, {PropList}) ->
 
 %% @doc Return a new property structure without the given keys.
 -spec drop([atom() | binary()], props()) -> props().
-drop(Keys, {PropList}) ->
-    BinKeys = keys_to_binary(Keys),
-    {lists:filter(
-       fun({Key, _Val}) ->
-               not lists:member(Key, BinKeys)
-       end, PropList)}.
-
+drop(Keys, Props) ->
+    lists:foldl(fun(Key, OldProps) ->        
+        do_drop(Key, OldProps)
+    end, Props, Keys).
+    
 %% @doc Merge two property structures.
 %% Duplicate keys in the second structure overwrite those in the first.
 -spec merge(props(), props()) -> props().
