@@ -19,11 +19,13 @@
          throw_on_set_non_array/1,
          throw_on_set_array_oob/1,
          take_keys/1,
+         take_nested_keys/1,
          drop_keys/1,
+         drop_nested_keys/1,
          merge/1,
-	 select_matches/1,
-	 delete_matches/1, 
-     convert_mochijson2_to_props/1]).
+	     select_matches/1,
+	     delete_matches/1,          
+         convert_mochijson2_to_props/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
@@ -67,7 +69,9 @@ all() ->
      throw_on_set_non_array,
      throw_on_set_array_oob,
      take_keys,
+     take_nested_keys,
      drop_keys,
+     drop_nested_keys,
      merge,
      select_matches,
      delete_matches, 
@@ -143,8 +147,17 @@ throw_on_set_array_oob(_Config) ->
 take_keys(_Config) ->
     {[{<<"a">>, 1}]} = props:take([a], ?DATA).
 
+take_nested_keys(_Config) ->
+    {[{<<"d">>,{[{<<"e">>,{[{<<"f">>,4}]}}]}}]} = props:take(['d.e.f'], ?DATA).
+
 drop_keys(_Config) ->
     {[{<<"a">>, 1}]} = props:drop([b, d], ?DATA).
+
+drop_nested_keys(_Config) ->
+    {[{<<"a">>,1},
+    {<<"b">>,[2,{[{<<"c">>,3}]}]},
+    {<<"d">>,{[{<<"e">>,{[]}}]}}]} = 
+    props:drop(['d.e.f'], ?DATA).
 
 merge(_Config) ->
     Src = props:make([{a, 1}, {b, 1}]),

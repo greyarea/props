@@ -237,28 +237,18 @@ make(PropList) ->
                   end, PropList),
     {PropList2}.
 
-%% @doc Convert a mixed atom/binary key list to binary only.
--spec keys_to_binary([atom() | binary()]) -> [binary()].
-keys_to_binary(Keys) ->
-    lists:map(
-      fun(K) ->
-              if
-                  is_atom(K) ->
-                      atom_to_binary(K, utf8);
-                  true ->
-                      K
-              end
-      end, Keys).
-
 %% @doc Return a new property structure containing specific keys only.
 -spec take([atom() | binary()], props()) -> props().
-take(Keys, {PropList}) ->
-    BinKeys = keys_to_binary(Keys),
-    {lists:filter(
-       fun({Key, _Val}) ->
-               lists:member(Key, BinKeys)
-       end, PropList)}.
-
+take(Keys, InputProps) ->
+    lists:foldl(fun(Key, Props) ->
+        case props:get(Key, InputProps) of
+            undefined -> 
+                Props;
+            Value ->
+                props:set(Key, Value, Props)
+        end            
+    end, props:new(), Keys).
+    
 %% @doc Return a new property structure without the given keys.
 -spec drop([atom() | binary()], props()) -> props().
 drop(Keys, Props) ->
