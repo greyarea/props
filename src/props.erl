@@ -13,6 +13,7 @@
          merge/2,
          diff/2,
          keys/1,
+         nested_keys/1,
          fold/3,
          select_matches/2,
 	     delete_matches/2,
@@ -267,13 +268,42 @@ merge({PropList1}, {[{Key, _Val} = Prop | PropList2]}) ->
 
 %% @doc Return a list of differences between two property structures.
 -spec diff(props(), props()) -> [{prop_path(), {prop_value(), prop_value()}}].
-diff(_Props1, _Props2) ->
-    [].
-
+diff(Props1, Props2) ->
+    Keys1 = sets:from_list(nested_keys(Props1)),
+    Keys2 = sets:from_list(nested_keys(Props2)),
+    Keys = sets:to_list(sets:union(Keys1, Keys2)),
+    
+    lists:foldl(fun(K, AccIn) ->
+        Key = binary_to_atom(K, utf8),
+        V1 = props:get(Key, Props1),
+        V2 = props:get(Key, Props2),
+        case (V1 =:= V2) of
+            true ->
+                AccIn;
+            false ->
+                [{Key, {V1, V2}}] ++ AccIn
+        end    
+    end, [], Keys).    
+        
 %% @doc Return the immediate keys in a property structure.
 -spec keys(props()) -> [binary()].
 keys({PropList}) ->
     proplists:get_keys(PropList).
+
+%% @doc Return the inested keys in a property structure.
+-spec nested_keys(props()) -> [binary()].
+nested_keys(PropList) ->
+    lists:flatten(nested_keys(<<>>, PropList)).
+nested_keys(Path, {List}) when is_list(List) ->
+    nested_keys(Path, List);    
+nested_keys(Path, [{_, _} |_] = List) ->
+    [nested_keys(Path, {K,V}) || {K,V} <- List];
+nested_keys(<<>>, {K, V}) ->        
+    nested_keys(K, V);
+nested_keys(Path, {K, V}) ->        
+    nested_keys(<<Path/binary, <<".">>/binary, K/binary>>, V);
+nested_keys(Path, _) ->    
+    Path.
 
 %% @doc Fold over the immediate keys/vals in a proplist.
 -spec fold(fun((binary(), prop_value(), term()) -> term()), term(), props()) -> term().
