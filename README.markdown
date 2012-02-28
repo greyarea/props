@@ -2,16 +2,18 @@
 
 This is a library for manipulating JSON like structures, called props.
 
+## Using
+
+To include props in your project, add the following to your `deps`
+section in `rebar.config`:
+
+    {props, ".*", {git, "https://github.com/greyarea/props.git", "master"}}
+
 ## Building
 
-Note that because rebar applies compiler options to downstream
-dependencies in some cases, you'll need to build neotoma manually
-with:
+props uses rebar controlled by a Makefile for building the code.
 
-    cd deps/neotoma && rebar compile
-    
-Or else the spec errors (which we want on props itself) will prevent
-the build from completing.
+`make depends` will grab the dependencies and `make` will build props.
 
 ## License
 
