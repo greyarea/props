@@ -23,8 +23,8 @@
          drop_keys/1,
          drop_nested_keys/1,
          merge/1,
-	     select_matches/1,
-	     delete_matches/1,          
+         select_matches/1,
+         delete_matches/1,          
          convert_mochijson2_to_props/1]).
 
 -include_lib("common_test/include/ct.hrl").
@@ -160,38 +160,38 @@ drop_nested_keys(_Config) ->
     props:drop(['d.e.f'], ?DATA).
 
 merge(_Config) ->
-    Src = props:make([{a, 1}, {b, 1}]),
-    Dst = props:make([{a, 1}, {b, 2}, {c, 3}]),
-    Dst = props:merge(Src, props:make([{b, 2}, {c, 3}])).
+    Src = props:set([{a, 1}, {b, 1}]),
+    Dst = props:set([{a, 1}, {b, 2}, {c, 3}]),
+    Dst = props:merge(Src, props:set([{b, 2}, {c, 3}])).
 
 select_matches(_Config) ->
-    PropsList = [props:make([{a, 1}, {b, 1}]),
-		 props:make([{a, 2}, {b, 1}])],
+    PropsList = [props:set([{a, 1}, {b, 1}]),
+		 props:set([{a, 2}, {b, 1}])],
     
-    Matches1 = props:select_matches(PropsList, props:make([{a, 1}])),
+    Matches1 = props:select_matches(PropsList, props:set([{a, 1}])),
     1 = length(Matches1),
     1 = props:get(a, hd(Matches1)),
     1 = props:get(b, hd(Matches1)),
     
-    Matches2 = props:select_matches(PropsList, props:make([{b, 1}])),
+    Matches2 = props:select_matches(PropsList, props:set([{b, 1}])),
     2 = length(Matches2),
     
-    Matches3 = props:select_matches(PropsList, props:make([{b, 2}])),
+    Matches3 = props:select_matches(PropsList, props:set([{b, 2}])),
     0 = length(Matches3).
 
 delete_matches(_Config) ->
-    PropsList = [props:make([{a, 1}, {b, 1}]),
-		 props:make([{a, 2}, {b, 1}])],
+    PropsList = [props:set([{a, 1}, {b, 1}]),
+		 props:set([{a, 2}, {b, 1}])],
     
-    Rest1 = props:delete_matches(PropsList, props:make([{a, 1}])),
+    Rest1 = props:delete_matches(PropsList, props:set([{a, 1}])),
     1 = length(Rest1),
     2 = props:get(a, hd(Rest1)),
     1 = props:get(b, hd(Rest1)),
     
-    Rest2 = props:delete_matches(PropsList, props:make([{b, 1}])),
+    Rest2 = props:delete_matches(PropsList, props:set([{b, 1}])),
     0 = length(Rest2),
     
-    Rest3 = props:delete_matches(PropsList, props:make([{b, 2}])),
+    Rest3 = props:delete_matches(PropsList, props:set([{b, 2}])),
     2 = length(Rest3).
 
 convert_mochijson2_to_props(_Config) ->
