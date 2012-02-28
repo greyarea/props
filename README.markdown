@@ -12,3 +12,7 @@ with:
     
 Or else the spec errors (which we want on props itself) will prevent
 the build from completing.
+
+## License
+
+props is licensed under the Apache 2.0 license.
