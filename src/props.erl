@@ -196,10 +196,8 @@ do_set([{index, Idx} | Rest], Value, List) when is_list(List) ->
 do_set([{index, Idx} | _Rest], _Value, NonList) ->
     throw(?INVALID_ACCESS_IDX(Idx, NonList)).
 
-
 %% @doc Internal naive recursive dropper.
--spec do_drop(atom() | binary(), props()) -> props().
-
+-spec do_drop(prop_path(), props()) -> props().
 do_drop(Path, Props) when is_atom(Path) ->
     do_drop(atom_to_list(Path), Props);
 do_drop(Path, Props) when is_binary(Path) ->
@@ -254,7 +252,7 @@ from_proplist(PropList) ->
     {PropList2}.
 
 %% @doc Return a new property structure containing specific keys only.
--spec take([atom() | binary()], props()) -> props().
+-spec take([prop_path()], props()) -> props().
 take(Keys, InputProps) ->
     lists:foldl(fun(Key, Props) ->
         case props:get(Key, InputProps) of
@@ -266,7 +264,7 @@ take(Keys, InputProps) ->
     end, props:new(), Keys).
     
 %% @doc Return a new property structure without the given keys.
--spec drop([atom() | binary()], props()) -> props().
+-spec drop([prop_path()], props()) -> props().
 drop(Keys, Props) ->
     lists:foldl(fun(Key, OldProps) ->        
         do_drop(Key, OldProps)
