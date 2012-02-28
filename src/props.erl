@@ -23,7 +23,6 @@
          set/1,
          set/2,
          set/3,
-         make/1,
          take/2,
          drop/2,
          merge/2,
@@ -32,12 +31,12 @@
          nested_keys/1,
          fold/3,
          select_matches/2,
-	     delete_matches/2,
+         delete_matches/2,
          to_pretty/1,
          to_string/1,
-         to_proplist/1, 
-         from_mochijson2/1
-         ]).
+         to_proplist/1,
+         from_proplist/1,
+         from_mochijson2/1]).
 
 -export_type([prop_value/0, props/0, prop_path/0]).
 
@@ -240,8 +239,8 @@ do_drop_path([{index, Idx} | _Rest], NonList) ->
     throw(?INVALID_ACCESS_IDX(Idx, NonList)).
 
 %% @doc Make a property structure from a proplist.
--spec make(proplists:proplist()) -> props().
-make(PropList) ->
+-spec from_proplist(proplists:proplist()) -> props().
+from_proplist(PropList) ->
     PropList2 = lists:map(
                   fun(Atom) when is_atom(Atom) ->
                           {atom_to_binary(Atom, utf8), true};
