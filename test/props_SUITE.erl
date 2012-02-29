@@ -24,7 +24,9 @@
          drop_nested_keys/1,
          merge/1,
          select_matches/1,
-         delete_matches/1,          
+         select_matches_nested/1,
+         delete_matches/1,
+         delete_matches_nested/1,
          convert_mochijson2_to_props/1]).
 
 -include_lib("common_test/include/ct.hrl").
@@ -74,7 +76,9 @@ all() ->
      drop_nested_keys,
      merge,
      select_matches,
-     delete_matches, 
+     select_matches_nested,
+     delete_matches,
+     delete_matches_nested,
      convert_mochijson2_to_props].
 
 %% Basic get tests.
@@ -179,6 +183,17 @@ select_matches(_Config) ->
     Matches3 = props:select_matches(PropsList, props:set([{b, 2}])),
     0 = length(Matches3).
 
+select_matches_nested(_Config) ->
+    PropsList = [props:set([{a, 1}, {c.d, 2}, {c.e.f, 3}]),
+                 props:set([{a, 2}, {c.d, 3}, {c.e.f, 3}])],
+
+    Matches1 = props:select_matches(PropsList, props:set(c.d, 2)),
+    1 = length(Matches1),
+    1 = props:get(a, hd(Matches1)),
+
+    Matches2 = props:select_matches(PropsList, props:set(c.e.f, 3)),
+    2 = length(Matches2).
+
 delete_matches(_Config) ->
     PropsList = [props:set([{a, 1}, {b, 1}]),
 		 props:set([{a, 2}, {b, 1}])],
@@ -193,6 +208,17 @@ delete_matches(_Config) ->
     
     Rest3 = props:delete_matches(PropsList, props:set([{b, 2}])),
     2 = length(Rest3).
+
+delete_matches_nested(_Config) ->
+    PropsList = [props:set([{a.b, 1}, {c.d.e.f, 2}]),
+                 props:set([{a.b, 2}, {c.d.e.f, 2}])],
+    
+    Rest1 = props:delete_matches(PropsList, props:set(a.b, 2)),
+    1 = length(Rest1),
+    1 = props:get(a.b, hd(Rest1)),
+    
+    Rest2 = props:delete_matches(PropsList, props:set(c.d.e.f, 2)),
+    0 = length(Rest2).
 
 convert_mochijson2_to_props(_Config) ->
 

@@ -441,29 +441,34 @@ from_mochijson2(Value) ->
 
 %% @doc Select or delete props from a list of props.
 -spec select_or_delete_matches([props()], props(), select | delete) -> [props()].
-select_or_delete_matches(PropsList, {MatchProps}, SelectOrDelete) ->
-    FilterMatch =
-	fun(Props) ->
-		lists:takewhile(
-		  fun({MPKey, MPValue}) ->
-			  case props:get(MPKey, Props) of
-			      Value when SelectOrDelete =:= select,
-					 Value =:= MPValue -> 
-				  true;
-			      Value when SelectOrDelete =:= delete,
-					 Value =/= MPValue ->
-				  true;
-			      _ ->
-				  false
-			  end
-		  end, MatchProps)
-	end,
+select_or_delete_matches(PropsList, MatchProps, SelectOrDelete) ->
     lists:filter(
       fun(Props) ->
-	      case FilterMatch(Props) of
-		  Matched when Matched =:= MatchProps->
-		      true;
+              case match(Props, MatchProps) of
+                  true ->
+                      SelectOrDelete =:= select;
 		  _ ->
-		      false
+		      SelectOrDelete =/= select
 	      end
       end, PropsList).
+
+%% @doc Test if a props matches another props.
+-spec match(props(), props()) -> boolean().
+match(_Props, {[]}) ->
+    true;
+match(Props, {[{MKey, MVal} | MProps]}) ->
+    case props:get(MKey, Props) of
+        undefined ->
+            false;
+        PVal when is_tuple(PVal) ->
+            case match(PVal, MVal) of
+                true ->
+                    match(Props, {MProps});
+                false ->
+                    false
+            end;
+        MVal ->
+            match(Props, {MProps});
+        _ ->
+            false
+    end.
