@@ -428,6 +428,8 @@ to_proplist(Value) ->
 
 %% @doc converts from mochijson2 format (http://doc.erlagner.org/mochiweb/mochijson2.html) to props
 -spec from_mochijson2(term()) -> props:props().
+from_mochijson2({struct, PropList}) when is_list(PropList), length(PropList) =:= 0 ->
+    props:new();
 from_mochijson2({struct, PropList}) when is_list(PropList) ->
     props:set(from_mochijson2(PropList));
 from_mochijson2(List) when is_list(List) ->
