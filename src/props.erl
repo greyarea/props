@@ -114,6 +114,8 @@ set(PropsList) ->
 %% With the (List, Props) form it sets all the properties in the given
 %% list in the given props structure.
 -spec set(prop_path() | [{prop_path(), prop_value()}], prop_value() | props()) -> props().
+set([], Props) ->
+    Props;
 set([{_, _} | _] = PropsList, Props) ->
     lists:foldl(
       fun({Path, Value}, Acc) ->

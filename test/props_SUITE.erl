@@ -27,7 +27,8 @@
          select_matches_nested/1,
          delete_matches/1,
          delete_matches_nested/1,
-         convert_mochijson2_to_props/1]).
+         convert_mochijson2_to_props/1,
+         set_with_empty_list/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
@@ -79,7 +80,8 @@ all() ->
      select_matches_nested,
      delete_matches,
      delete_matches_nested,
-     convert_mochijson2_to_props].
+     convert_mochijson2_to_props,
+     set_with_empty_list].
 
 %% Basic get tests.
 
@@ -234,6 +236,14 @@ convert_mochijson2_to_props(_Config) ->
     Props = props:from_mochijson2(MochiStruct),
     [H|_T] = props:get(<<"data">>, Props), 
     <<"37004195">> = props:get(<<"id">>, H),
+
+    N = props:new(),
+    N = props:from_mochijson2({struct, []}),
     ok.
 
+set_with_empty_list(_Config) ->
+    N = props:new(),
+    N = props:set([]),
+    N = props:set([], props:new()),
+    ok.
 
