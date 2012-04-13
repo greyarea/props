@@ -47,5 +47,5 @@ path <- var ('[' int ']')? ('.' path)? `
 int <- [0-9]+ `
   list_to_integer(binary_to_list(list_to_binary(Node)))`;
 
-var <- [_a-zA-Z0-9] [:\s_a-zA-Z0-9]* `
+var <- [-_a-zA-Z0-9] [-:\s_a-zA-Z0-9]* `
   list_to_binary(Node)`;
