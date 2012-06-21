@@ -36,7 +36,8 @@
          to_string/1,
          to_proplist/1,
          from_proplist/1,
-         from_mochijson2/1]).
+         from_mochijson2/1,
+	 path_parse/1]).
 
 -export_type([prop_value/0, props/0, prop_path/0]).
 
@@ -69,7 +70,7 @@ get(Path, Props, Default) when is_atom(Path) ->
 get(Path, Props, Default) when is_binary(Path) ->
     do_get([{prop, Path}], Props, Default);
 get(Path, Props, Default) ->
-    PathTokens = props_path_parser:parse(Path),
+    PathTokens = path_parse(Path),
     do_get(PathTokens, Props, Default).
 
 %% @doc Internal getter which operates on path tokens.
@@ -131,7 +132,7 @@ set(Path, Value, Props) when is_atom(Path) ->
 set(Path, Value, Props) when is_binary(Path) ->
     do_set([{prop, Path}], Value, Props);
 set(Path, Value, Props) ->
-    PathTokens = props_path_parser:parse(Path),
+    PathTokens = path_parse(Path),
     do_set(PathTokens, Value, Props).
 
 %% @doc Internal naive recursive setter.
@@ -205,7 +206,7 @@ do_drop(Path, Props) when is_atom(Path) ->
 do_drop(Path, Props) when is_binary(Path) ->
     do_drop_path([{prop, Path}], Props);
 do_drop(Path, Props) ->    
-    PathTokens = props_path_parser:parse(Path),
+    PathTokens = path_parse(Path),
     do_drop_path(PathTokens, Props).
 do_drop_path([{prop, Key}], {PropList}) ->
     PropList2 = lists:keydelete(Key, 1, PropList),
@@ -476,3 +477,8 @@ match(Props, {[{MKey, MVal} | MProps]}) ->
         _ ->
             false
     end.
+
+-spec path_parse(list()) -> list().
+path_parse(Path) ->
+    Tokens = string:tokens(Path, "."),
+    [{prop, list_to_binary(Token)} || Token <- Tokens].
