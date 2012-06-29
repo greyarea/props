@@ -1,5 +1,4 @@
-%% Property path DSL
-%% props_path_parser.peg
+%% props_path_parser.erl
 %%
 %% Copyright 2011-2012 Grey Area
 %%
@@ -28,24 +27,21 @@
 %% will work the same.
 %%
 %% Indexes are 1-based, just like Erlang's lists module.
-%%
-%% Inspired by:
-%% http://www.progski.net/blog/2010/destructuring_json_in_erlang_made_easy.html
 
-path <- var ('[' int ']')? ('.' path)? `
-  case Node of
-      [Var, [], []] ->
-          [{prop, Var}];
-      [Var, [_, I, _], []] ->
-          [{prop, Var}, {index, I}];
-      [Var, [], [_, Rest]] ->
-          [{prop, Var}] ++ Rest;
-      [Var, [_, I, _], [_, Rest]] ->
-          [{prop, Var}, {index, I}] ++ Rest
-  end`;
+-module(props_path_parser).
+-export([parse/1]).
 
-int <- [0-9]+ `
-  list_to_integer(binary_to_list(list_to_binary(Node)))`;
-
-var <- [-_a-zA-Z0-9] [-:\s_a-zA-Z0-9]* `
-  list_to_binary(Node)`;
+-spec parse(binary() | list()) -> [{prop, binary()} | {index, integer()}].
+parse(Path) when is_binary(Path) -> parse(binary_to_list(Path));
+parse(Path) ->
+    Tokens = string:tokens(Path, "."),
+    Parsed = lists:map(fun(Token) ->
+			       case string:tokens(Token, "[]") of
+				   [P, I] ->
+				       {Index, _} = string:to_integer(I),
+				       [{prop, list_to_binary(P)}, {index, Index}];
+				   [P] ->
+				       [{prop, list_to_binary(P)}]
+			       end
+		       end, Tokens),
+    lists:flatten(Parsed).
