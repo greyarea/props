@@ -86,7 +86,7 @@ all() ->
 %% Basic get tests.
 
 basic_get_with_atom_path(_Config) ->
-    4 = props:get(d.e.f, ?DATA).
+    4 = props:get('d.e.f', ?DATA).
 
 array_get_with_atom_path(_Config) ->
     3 = props:get('b[2].c', ?DATA).
@@ -108,7 +108,7 @@ multi_set(_Config) ->
             {<<"b">>, 2}]},
     Dst = {[{<<"a">>, {[{<<"b">>, {[{<<"c">>, 1}]}}]}},
             {<<"b">>, 2}]},
-    Dst = props:set(a.b.c, 1, Src).
+    Dst = props:set('a.b.c', 1, Src).
 
 array_index_change(_Config) ->
     Src = {[{<<"a">>, [1]}]},
@@ -118,7 +118,7 @@ array_index_change(_Config) ->
 create_implicit_props(_Config) ->
     Src = {[]},
     Dst = {[{<<"a">>, {[{<<"b">>, 1}]}}]},
-    Dst = props:set(a.b, 1, Src).
+    Dst = props:set('a.b', 1, Src).
 
 create_implicit_array(_Config) ->
     Src = {[]},
@@ -132,7 +132,7 @@ create_implicit_index(_Config) ->
 
 throw_on_get_non_props(_Config) ->
     ?assertThrows({error, {invalid_access, key, _, _}},
-                  props:get(a.b, ?DATA)).
+                  props:get('a.b', ?DATA)).
 
 throw_on_get_non_array(_Config) ->
     ?assertThrows({error, {invalid_access, index, _, _}},
@@ -140,7 +140,7 @@ throw_on_get_non_array(_Config) ->
 
 throw_on_set_non_props(_Config) ->
     ?assertThrows({error, {invalid_access, key, _, _}},
-                  props:set(a.b, 1, ?DATA)).
+                  props:set('a.b', 1, ?DATA)).
 
 throw_on_set_non_array(_Config) ->
     ?assertThrows({error, {invalid_access, index, _, _}},
@@ -186,14 +186,14 @@ select_matches(_Config) ->
     0 = length(Matches3).
 
 select_matches_nested(_Config) ->
-    PropsList = [props:set([{a, 1}, {c.d, 2}, {c.e.f, 3}]),
-                 props:set([{a, 2}, {c.d, 3}, {c.e.f, 3}])],
+    PropsList = [props:set([{a, 1}, {'c.d', 2}, {'c.e.f', 3}]),
+                 props:set([{a, 2}, {'c.d', 3}, {'c.e.f', 3}])],
 
-    Matches1 = props:select_matches(PropsList, props:set(c.d, 2)),
+    Matches1 = props:select_matches(PropsList, props:set('c.d', 2)),
     1 = length(Matches1),
     1 = props:get(a, hd(Matches1)),
 
-    Matches2 = props:select_matches(PropsList, props:set(c.e.f, 3)),
+    Matches2 = props:select_matches(PropsList, props:set('c.e.f', 3)),
     2 = length(Matches2).
 
 delete_matches(_Config) ->
@@ -212,14 +212,14 @@ delete_matches(_Config) ->
     2 = length(Rest3).
 
 delete_matches_nested(_Config) ->
-    PropsList = [props:set([{a.b, 1}, {c.d.e.f, 2}]),
-                 props:set([{a.b, 2}, {c.d.e.f, 2}])],
+    PropsList = [props:set([{'a.b', 1}, {'c.d.e.f', 2}]),
+                 props:set([{'a.b', 2}, {'c.d.e.f', 2}])],
     
-    Rest1 = props:delete_matches(PropsList, props:set(a.b, 2)),
+    Rest1 = props:delete_matches(PropsList, props:set('a.b', 2)),
     1 = length(Rest1),
-    1 = props:get(a.b, hd(Rest1)),
+    1 = props:get('a.b', hd(Rest1)),
     
-    Rest2 = props:delete_matches(PropsList, props:set(c.d.e.f, 2)),
+    Rest2 = props:delete_matches(PropsList, props:set('c.d.e.f', 2)),
     0 = length(Rest2).
 
 convert_mochijson2_to_props(_Config) ->
