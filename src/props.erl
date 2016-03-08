@@ -241,17 +241,20 @@ do_drop_path([{index, Idx} | _Rest], NonList) ->
 %% @doc Make a property structure from a proplist.
 -spec from_proplist(proplists:proplist()) -> props().
 from_proplist(PropList) ->
-    PropList2 = lists:map(
-                  fun(Atom) when is_atom(Atom) ->
-                          {atom_to_binary(Atom, utf8), true};
-                     ({Key, Val}) when is_atom(Key) ->
-                          {atom_to_binary(Key, utf8), Val};
-                     ({Key, Val}) when is_list(Key) ->
-                          {list_to_binary(Key), Val};
-                     ({Key, Val}) when is_binary(Key) ->
-                          {Key, Val}
-                  end, PropList),
-    {PropList2}.
+  PropList2 = lists:map(fun convert_proplist_entry/1, PropList),
+  {PropList2}.
+
+convert_proplist_entry({Key, [[{_, _} | _] | _] = ListOfProplists}) ->
+  NestedProplists = lists:map(fun from_proplist/1, ListOfProplists),
+  convert_proplist_entry({Key, NestedProplists});
+convert_proplist_entry(Atom) when is_atom(Atom) ->
+  {atom_to_binary(Atom, utf8), true};
+convert_proplist_entry({Key, Val}) when is_atom(Key) ->
+  {atom_to_binary(Key, utf8), Val};
+convert_proplist_entry({Key, Val}) when is_list(Key) ->
+  {list_to_binary(Key), Val};
+convert_proplist_entry({Key, Val}) when is_binary(Key) ->
+  {Key, Val}.
 
 %% @doc Return a new property structure containing specific keys only.
 -spec take([prop_path()], props()) -> props().
