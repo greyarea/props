@@ -29,7 +29,8 @@
          delete_matches_nested/1,
          convert_mochijson2_to_props/1,
          set_with_empty_list/1,
-         list_of_proplists/1]).
+         list_of_proplists/1,
+         nested_proplist/1]).
 
 -include_lib("common_test/include/ct.hrl").
 
@@ -83,7 +84,8 @@ all() ->
      delete_matches_nested,
      convert_mochijson2_to_props,
      set_with_empty_list,
-     list_of_proplists].
+     list_of_proplists,
+     nested_proplist].
 
 %% Basic get tests.
 
@@ -262,6 +264,21 @@ list_of_proplists(_Config) ->
         {foo, [
             [{bar, 1}],
             [{baz, 2}]
+        ]}
+    ]),
+    Expected = Result.
+
+nested_proplist(_Config) ->
+    Expected = {[
+        {<<"foo">>, {[
+            {<<"bar">>, 1},
+            {<<"baz">>, 2}
+        ]}}
+    ]},
+    Result = props:from_proplist([
+        {foo, [
+            {bar, 1},
+            {baz, 2}
         ]}
     ]),
     Expected = Result.

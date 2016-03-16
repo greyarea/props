@@ -244,6 +244,8 @@ from_proplist(PropList) ->
   PropList2 = lists:map(fun convert_proplist_entry/1, PropList),
   {PropList2}.
 
+convert_proplist_entry({Key, [{_, _} | _] = Proplist}) ->
+  convert_proplist_entry({Key, from_proplist(Proplist)});
 convert_proplist_entry({Key, [[{_, _} | _] | _] = ListOfProplists}) ->
   NestedProplists = lists:map(fun from_proplist/1, ListOfProplists),
   convert_proplist_entry({Key, NestedProplists});
