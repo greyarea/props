@@ -144,10 +144,8 @@ do_set([{prop, Key}], _Value, NonProps) ->
 do_set([{index, Idx}], Value, List) when is_list(List) ->
     try
         {Prefix, Suffix} = case {Idx, List} of
-                               {1, []} ->
-                                   {[], []};
-                               {1, [_ | Suf]} ->
-                                   {[], Suf};
+                               {1, _} ->
+                                   {[], List};
                                _ ->
                                    lists:split(Idx - 1, List)
                            end,
@@ -155,7 +153,7 @@ do_set([{index, Idx}], Value, List) when is_list(List) ->
             [] ->
                 lists:append(Prefix, [Value]);
             [_ | Rest] ->
-                lists:append(Prefix, [Value], Rest)
+                lists:append([Prefix, [Value], Rest])
         end
     catch
         _:_ ->
@@ -193,7 +191,7 @@ do_set([{index, Idx} | Rest], Value, List) when is_list(List) ->
             lists:append(Prefix, [[]]);
         {[OldVal | End], _} ->
             Val = do_set(Rest, Value, OldVal),
-            lists:append(Prefix, [Val], End)
+            lists:append([Prefix, [Val], End])
     end;
 do_set([{index, Idx} | _Rest], _Value, NonList) ->
     throw(?INVALID_ACCESS_IDX(Idx, NonList)).
