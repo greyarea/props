@@ -10,6 +10,10 @@
          simple_set/1,
          multi_set/1,
          array_index_change/1,
+         array_index_change_first/1,
+         array_index_change_middle/1,
+         array_index_change_last/1,
+         array_object_field_change/1,
          create_implicit_props/1,
          create_implicit_array/1,
          create_implicit_index/1,
@@ -65,6 +69,10 @@ all() ->
      simple_set,
      multi_set,
      array_index_change,
+     array_index_change_first,
+     array_index_change_middle,
+     array_index_change_last,
+     array_object_field_change,
      create_implicit_props,
      create_implicit_array,
      create_implicit_index,
@@ -118,6 +126,26 @@ array_index_change(_Config) ->
     Src = {[{<<"a">>, [1]}]},
     Dst = {[{<<"a">>, [2]}]},
     Dst = props:set("a[1]", 2, Src).
+
+array_index_change_first(_Config) ->
+    Src = {[{<<"a">>, [1, 3, 5]}]},
+    Dst = {[{<<"a">>, [2, 3, 5]}]},
+    Dst = props:set("a[1]", 2, Src).
+
+array_index_change_middle(_Config) ->
+    Src = {[{<<"a">>, [1, 3, 5]}]},
+    Dst = {[{<<"a">>, [1, 2, 5]}]},
+    Dst = props:set("a[2]", 2, Src).
+
+array_index_change_last(_Config) ->
+    Src = {[{<<"a">>, [1, 3, 5]}]},
+    Dst = {[{<<"a">>, [1, 3, 2]}]},
+    Dst = props:set("a[3]", 2, Src).
+
+array_object_field_change(_Config) ->
+    Src = {[{<<"a">>, [{[{<<"b">>, 1}]}]}]},
+    Dst = {[{<<"a">>, [{[{<<"b">>, 2}]}]}]},
+    Dst = props:set("a[1].b", 2, Src).
 
 create_implicit_props(_Config) ->
     Src = {[]},
